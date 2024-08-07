@@ -491,6 +491,10 @@ class Dokchitser(SageObject):
 
         - ``s`` -- complex number
 
+        - ``c`` -- internal parameter, call with `c>1` to get the same value
+          with a different cutoff point (`c` close to `1`); should return the
+          same answer, good to check if everything works with right precision
+
         .. NOTE::
 
            Evaluation of the function takes a long time, so each
@@ -514,7 +518,10 @@ class Dokchitser(SageObject):
             self.__values = {}
         except KeyError:
             pass
-        z = self._gp_call_inst('L', s)
+        if c is None:
+            z = self._gp_call_inst('L', s)
+        else:
+            z = self._gp_call_inst('L', s, c)
         if 'pole' in z:
             print(z)
             raise ArithmeticError
