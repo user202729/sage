@@ -4003,8 +4003,7 @@ class Link(SageObject):
         # set the limits for the KnotInfoSeries
         if cr > 11 and co > 1:
             cr = 11
-        if cr > 13:
-            cr = 13
+        cr = min(cr, 13)
 
         Hp = self.homfly_polynomial(normalization='vz')
 
@@ -4033,7 +4032,7 @@ class Link(SageObject):
             Sn = KnotInfoSeries(cr, is_knot, False)
             la = Sa.lower_list(oriented=True, comp=co, det=det, homfly=Hp)
             ln = Sn.lower_list(oriented=True, comp=co, det=det, homfly=Hp)
-            l = sorted(list(set(la + ln)))
+            l = sorted(set(la + ln))
 
         br = self.braid()
         br_ind = br.strands()
@@ -4452,7 +4451,7 @@ class Link(SageObject):
 
             if not l[0].is_knot():
                 S = l[0].series(oriented=True)
-                if set(list(S)) == set(l):
+                if set(S) == set(l):
                     return answer_unori(S)
 
             raise NotImplementedError('this link cannot be uniquely determined%s' % non_unique_hint)
