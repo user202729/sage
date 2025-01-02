@@ -1,16 +1,16 @@
 .. _build-source-meson:
 
-================================
-Building from source using Meson
-================================
+===============================
+Install from Source using Meson
+===============================
 
-This is a short guide on how to build the Sage from source using Meson.
+This is a short guide on how to build and install Sage from source using Meson.
 
 Walkthrough
 ===========
 
 Assume we're starting from a clean repo and a fully set up conda environment:
-        
+
 .. CODE-BLOCK:: shell-session
 
     $ mamba env create --file src/environment-3.11.yml --name sage-dev
@@ -30,29 +30,29 @@ to the installed libraries:
 .. NOTE::
 
     If you have previously build Sage in-place, you first have to delete the
-    already compiled files, e.g. with ``shopt -s globstar`` followed by 
+    already compiled files, e.g. with ``shopt -s globstar`` followed by
     ``rm src/**/*.so`` or ``for f in src/**/*.so ; do mv "$f" "$f.old"; done``.
     Moreover, remove the old generated files with
-    ``find src/sage/ext/interpreters -type f ! -name 'meson.build' -delete``. 
+    ``find src/sage/ext/interpreters -type f ! -name 'meson.build' -delete``.
     Also uninstall the 'old' sage packages with ``pip uninstall sage-conf sage-setup sagemath-standard``.
 
 To compile and install the project in editable install, just use:
-    
+
 .. CODE-BLOCK:: shell-session
 
     $ pip install --no-build-isolation --editable .
 
-This will install Sage in the current Python environment. 
-In a Conda environment, the ``--no-build-isolation`` flag is necessary to 
+This will install Sage in the current Python environment.
+In a Conda environment, the ``--no-build-isolation`` flag is necessary to
 allow the build system to reuse the already installed build dependencies.
 If you don't use Conda, you can omit this flag.
 
-You can then start Sage from the command line with ``./sage`` 
+You can then start Sage from the command line with ``./sage``
 or run the tests with ``./sage -t``.
 
 .. NOTE::
-    
-    By using ``pip install --editable`` in the above steps, the Sage library 
+
+    By using ``pip install --editable`` in the above steps, the Sage library
     is installed in editable mode. This means that when you only edit source
     files, there is no need to rebuild the library; it suffices to restart Sage.
     Note that this even works when you edit Cython files (they will be recompiled
@@ -62,7 +62,7 @@ or run the tests with ``./sage -t``.
 .. NOTE::
 
     Note that ``make`` is not used at all, nor is ``configure``.
-    This means that any Sage-the-distribution commands such as ``sage -i`` 
+    This means that any Sage-the-distribution commands such as ``sage -i``
     will not work.
 
 .. NOTE::
@@ -127,13 +127,13 @@ Alternatively, we can still use pip to install:
     Package maintainers may want to specify further build options or need
     to install to a different directory than the install prefix.
     Both are supported naturally by Meson:
-    
+
     .. CODE-BLOCK:: shell-session
 
         $ meson setup builddir --prefix=/usr --libdir=... -Dcpp_args=...
         $ meson compile -C builddir
         $ DESTDIR=/path/to/staging/root meson install -C builddir
-    
+
     See `Meson's quick guide <https://mesonbuild.com/Quick-guide.html#using-meson-as-a-distro-packager>`_
     and `Meson's install guide <https://mesonbuild.com/Installing.html#destdir-support>`_
     for more information.

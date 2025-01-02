@@ -2,8 +2,8 @@
 
 .. _sec-installation-from-sources:
 
-Install from Source Code
-========================
+Install from Source
+===================
 
 Building Sage from the source code has the major
 advantage that your install will be optimized for your particular computer and
@@ -20,6 +20,12 @@ instructions in `README.md <https://github.com/sagemath/sage/#readme>`_ may
 better suit you. The instructions support most of the platforms on a personal
 computer. However, if you encounter problems or you plan to install Sage on an
 unusual environment, you may find more information in the sections below.
+
+.. hint::
+
+  The following steps use the classical ``./configure && make`` build
+  process. The modern Meson build system is also supported, see
+  :ref:`build-source-meson`.
 
 
 .. _section-prereqs:
@@ -713,15 +719,6 @@ and WSL.
 
 Post-build remarks
 ------------------
-
-.. hint::
-
-  The following steps use the classical ``./configure && make`` build
-  process. The modern Meson build system is also supported, see
-  :ref:`build-source-meson`.
-
-#. Follow the procedure in the file `README.md <https://github.com/sagemath/sage/#readme>`_
-   in ``SAGE_ROOT``.
 
 To start Sage, you can now simply type from Sage's home directory::
 

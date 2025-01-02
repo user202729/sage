@@ -23,7 +23,7 @@ of the version specified on the left, below the logo, or of any recent
 versions. However, you may need to check additional information and details
 regarding installation on supported platforms available in the section
 "Availability and installation help" of the `Release Tour
-<https://github.com/sagemath/sage/releases>`_ for the Sage version you plan to
+<https://github.com/sagemath/sage/wiki/Release-Tours>`_ for the Sage version you plan to
 install.
 
 There are alternative ways you can install Sage depending on how you plan to use it
@@ -141,10 +141,10 @@ Installation
    :maxdepth: 2
 
    source
+   meson
    binary
    conda
    pypi
-   meson
    launching
    troubles
 

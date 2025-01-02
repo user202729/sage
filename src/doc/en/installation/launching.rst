@@ -1,6 +1,6 @@
 .. _sec-post-installation:
 
-Post installation
+Post Installation
 =================
 
 Now we assume that you installed Sage properly on your system. This
