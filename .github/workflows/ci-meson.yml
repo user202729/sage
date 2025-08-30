@@ -35,10 +35,10 @@ jobs:
       - name: Maximize build disk space
         shell: bash -l {0}
         run: |
-          for x in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
+          for x in /usr/lib/google-cloud-sdk /usr/local/lib/android /usr/local/.ghcup/ghc; do
             echo "Removing $x..."
             cd "$x"
-            perl -e 'for(<*>){((stat)[9]<(unlink))}'   # https://unix.stackexchange.com/a/79656/
+            sudo perl -e 'for(<*>){((stat)[9]<(unlink))}'   # https://unix.stackexchange.com/a/79656/
             echo "... done"
             df
           done
