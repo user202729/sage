@@ -53,6 +53,12 @@ jobs:
         run: unzip doc.zip -d doc
         if: steps.download-doc.outcome == 'success'
 
+      - name: Read diff file size
+        id: read-diff-file-size
+        run: |
+          cat doc/DIFF_FILE_SIZE.txt  # debug print
+          { printf 'result='; cat doc/DIFF_FILE_SIZE.txt } >> "$GITHUB_OUTPUT"
+
       - name: Deploy to Netlify
         id: deploy-netlify
         uses: netlify/actions/cli@master
@@ -75,7 +81,7 @@ jobs:
           header: preview-comment
           recreate: false
           message: |
-            [Documentation preview for this PR](${{ steps.deploy-netlify.outputs.NETLIFY_URL }}/html/en) (built with commit ${{ steps.source-run-info.outputs.sourceHeadSha }}; [changes](${{ steps.deploy-netlify.outputs.NETLIFY_URL }}/CHANGES.html)) is ready! :tada:
+            [Documentation preview for this PR](${{ steps.deploy-netlify.outputs.NETLIFY_URL }}/html/en) (built with commit ${{ steps.source-run-info.outputs.sourceHeadSha }}; ${{ steps.read-diff-file-size.outputs.result && format('[changes]({0}/CHANGES.html) ({1} bytes) is ready!', steps.deploy-netlify.outputs.NETLIFY_URL, steps.read-diff-file-size.outputs.result) || 'there is no change! ' }} :tada:
             This preview will update shortly after each push to this PR.
         if: steps.download-doc.outcome == 'success'
 
