@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success'
     env:
-      CAN_DEPLOY: ${{ secrets.NETLIFY_AUTH_TOKEN != '' &&  secrets.NETLIFY_SITE_ID != '' }}
+      CAN_DEPLOY: 'true'
     steps:
       - name: Get information about workflow origin
         uses: potiuk/get-workflow-origin@v1_5
@@ -58,6 +58,10 @@ jobs:
         run: |
           cat doc/DIFF_FILE_SIZE.txt  # debug print
           { printf 'result='; cat doc/DIFF_FILE_SIZE.txt } >> "$GITHUB_OUTPUT"
+
+      - name: Debug print diff file size
+        run: |
+          echo ${{ steps.read-diff-file-size.outputs.result }}
 
       - name: Deploy to Netlify
         id: deploy-netlify
