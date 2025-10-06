@@ -57,9 +57,10 @@ jobs:
 
       - name: Read diff file size
         id: read-diff-file-size
+        continue-on-error: true
         run: |
           cat doc/doc/DIFF_FILE_SIZE.txt  # debug print
-          { printf 'result='; cat doc/doc/DIFF_FILE_SIZE.txt } >> "$GITHUB_OUTPUT"
+          { printf 'result='; cat doc/doc/DIFF_FILE_SIZE.txt; } >> "$GITHUB_OUTPUT"
 
       - name: Debug print diff file size
         run: |
@@ -68,6 +69,7 @@ jobs:
       - name: Deploy to Netlify
         id: deploy-netlify
         uses: netlify/actions/cli@master
+        continue-on-error: true
         with:
           args: deploy --dir=doc/doc --message ${NETLIFY_MESSAGE} --alias ${NETLIFY_ALIAS}
         env:
