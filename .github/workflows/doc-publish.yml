@@ -61,6 +61,8 @@ jobs:
         run: |
           cat doc/doc/DIFF_FILE_SIZE.txt  # debug print
           { printf 'result='; cat doc/doc/DIFF_FILE_SIZE.txt; } >> "$GITHUB_OUTPUT"
+        # note that the result will have type string! although "== 0" coerce to number, see
+        # https://docs.github.com/en/actions/reference/workflows-and-actions/expressions
 
       - name: Debug print diff file size
         run: |
@@ -89,7 +91,7 @@ jobs:
           header: preview-comment
           recreate: false
           message: |
-            [Documentation preview for this PR](${{ steps.deploy-netlify.outputs.NETLIFY_URL }}/html/en) (built with commit ${{ steps.source-run-info.outputs.sourceHeadSha }}; ${{ steps.read-diff-file-size.outputs.result && format('[changes]({0}/CHANGES.html) ({1} bytes) is ready!', steps.deploy-netlify.outputs.NETLIFY_URL, steps.read-diff-file-size.outputs.result) || 'there is no change! ' }} :tada:
+            [Documentation preview for this PR](${{ steps.deploy-netlify.outputs.NETLIFY_URL }}/html/en) (built with commit ${{ steps.source-run-info.outputs.sourceHeadSha }}; ${{ steps.read-diff-file-size.outputs.result != 0 && format('[changes]({0}/CHANGES.html) ({1} bytes) is ready!', steps.deploy-netlify.outputs.NETLIFY_URL, steps.read-diff-file-size.outputs.result) || 'there is no change! ' }} :tada:
             This preview will update shortly after each push to this PR.
         if: steps.download-doc.outcome == 'success'
 
