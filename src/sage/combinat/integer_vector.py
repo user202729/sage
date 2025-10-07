@@ -1,6 +1,8 @@
 """
 Nonnegative integer vectors
 
+Some doc modification.
+
 AUTHORS:
 
 - Mike Hansen (2007): original module
