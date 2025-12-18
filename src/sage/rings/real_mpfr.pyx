@@ -3033,7 +3033,7 @@ cdef class RealNumber(sage.structure.element.RingElement):
     def round(self):
         """
          Round ``self`` to the nearest representable integer, rounding halfway
-         cases away from zero.
+         cases with the even-rounding rule.
 
          .. NOTE::
 
@@ -3051,7 +3051,7 @@ cdef class RealNumber(sage.structure.element.RingElement):
              -1
          """
         cdef RealNumber x = self._new()
-        mpfr_round(x.value, self.value)
+        mpfr_roundeven(x.value, self.value)
         return x.integer_part()
 
     def floor(self):
