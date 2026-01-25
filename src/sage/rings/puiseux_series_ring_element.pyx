@@ -108,6 +108,7 @@ from sage.arith.misc import gcd
 from sage.rings.integer_ring import ZZ
 from sage.rings.rational_field import QQ
 from sage.rings.infinity import infinity
+from sage.misc.repr import repr_lincomb
 from sage.rings.laurent_series_ring_element cimport LaurentSeries
 from sage.structure.element cimport (Element, AlgebraElement)
 from sage.structure.richcmp cimport richcmp
@@ -246,46 +247,34 @@ cdef class PuiseuxSeries(AlgebraElement):
             sage: t**(1/2) + 5 * t^(1/3)                                                # needs sage.rings.padics
             (5 + O(5^21))*t^(1/3) + (1 + O(5^20))*t^(1/2)
         """
-        laurent = self.laurent_part()
-        s = repr(laurent)
-        if self.ramification_index() == 1:
-            return s
+        if self.is_zero():
+            if self.prec() is infinity:
+                return "0"
+            return "O(%s^%s)" % (self._parent.variable_name(), self.prec())
 
         X = self._parent.variable_name()
-
-        # find a temporary variable name (to avoid multiple transformations)
-        Xtemp = '?'
-        while Xtemp in s: Xtemp +='?' # if somebody uses '?' in variable_name
-
-        # renaming and generalizing linear term
-        s = s.replace('%s' %X, '%s^1' %Xtemp)
-        s = s.replace('^1^', '^' )
-
-        # prepare exponent list
-        if laurent.prec() is infinity:
-            exponents = [ZZ(exp) for exp in set(laurent.exponents())]
-        else:
-            exponents = [ZZ(exp) for exp in set(laurent.exponents() + [laurent.prec()])]
-
-        # sort exponents such that the largest will be replaced first
-        exp_pos = [exp for exp in exponents if exp >= 0]
-        exp_pos.sort(reverse=True)
-        exp_neg = [exp for exp in exponents if exp < 0]
-        exp_neg.sort()
-        exponents = exp_neg + exp_pos
-
-        # replacing exponents
         e = ZZ(self.ramification_index())
-        for exp_l in exponents:
-            exp = exp_l/e
-            repl_str = '%s^%s' %(Xtemp, exp_l)
-            if exp.is_one():
-                s = s.replace(repl_str, '%s' %X)
-            elif e.divides(exp_l):
-                s = s.replace(repl_str, '%s^%s' %(X, exp))
+
+        def repr_monomial(exp_l):
+            exp = exp_l / e
+            if exp == 0: return "1"
+            if exp == 1: return X
+            if e.divides(exp_l):
+                return f"{X}^{exp}"
             else:
-                s = s.replace(repl_str, '%s^(%s)' %(X, exp))
-        return s
+                return f"{X}^({exp})"
+
+        laurent = self.laurent_part()
+        coeffs = laurent.coefficients()
+        exponents = laurent.exponents()
+        terms = [(repr_monomial(exp_l), c) for exp_l, c in zip(exponents, coeffs)]
+        if self.prec() != infinity:
+            exp = self.prec()
+            bigoh = f"O({repr_monomial(ZZ(exp*e))})"
+            terms.append((bigoh, 1))
+
+        return repr_lincomb(terms, strip_one=True, detect_negative_by_comparison=False,
+                            no_coeff_space=False)
 
     def __call__(self, x):
         r"""

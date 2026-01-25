@@ -73,6 +73,7 @@ import sage.rings.rational_field
 import sage.rings.fraction_field_element
 import sage.rings.infinity as infinity
 from sage.misc.latex import latex
+from sage.misc.repr import repr_lincomb
 from sage.arith.power cimport generic_power
 from sage.arith.long cimport pyobject_to_long
 from sage.structure.factorization import Factorization
@@ -3178,44 +3179,27 @@ cdef class Polynomial(CommutativePolynomial):
         # want their coefficient printed with its O() term
         if self._is_gen and not isinstance(self._parent._base, pAdicGeneric):
             return name
-        sbuf = StringIO()
-        sbuf.write(" ")
-        m = self.degree() + 1
-        atomic_repr = self._parent.base_ring()._repr_option('element_is_atomic')
+
         coeffs = self.list(copy=False)
-        for n in reversed(range(m)):
+
+        def repr_monomial(n):
+            if n == 0: return "1"
+            if n == 1: return name
+            return f"{name}^{n}"
+
+        terms = []
+        for n in reversed(range(len(coeffs))):
             x = coeffs[n]
-            is_nonzero = False
             try:
-                is_nonzero = bool(x)
+                if not x: continue
             except NotImplementedError:
-                # for some elements it is not possible/feasible to determine
-                # whether they are zero or not; we just print them anyway in
-                # such cases
-                is_nonzero = True
-            if is_nonzero:
-                if n != m-1:
-                    sbuf.write(" + ")
-                x = y = repr(x)
-                if y.find("-") == 0:
-                    y = y[1:]
-                if not atomic_repr and n > 0 and (y.find("+") != -1 or y.find("-") != -1):
-                    x = "(%s)" % x
-                if n > 1:
-                    var = "*%s^%s" % (name, n)
-                elif n==1:
-                    var = "*%s" % name
-                else:
-                    var = ""
-                sbuf.write(x)
-                sbuf.write(var)
-        s = sbuf.getvalue()
-        s = s.replace(" + -", " - ")
-        s = re.sub(r' 1(\.0+)?\*',' ', s)
-        s = re.sub(r' -1(\.0+)?\*',' -', s)
-        if s == " ":
-            return "0"
-        return s[1:]
+                pass
+            terms.append((repr_monomial(n), x))
+
+        return repr_lincomb(terms, strip_one=True, no_coeff_space=False,
+                            detect_negative_by_comparison=False,
+                            keep_inexact_one_coeff=False,
+                            allow_lone_coeff_without_parentheses=True)
 
     def _repr_(self):
         r"""
@@ -3267,36 +3251,29 @@ cdef class Polynomial(CommutativePolynomial):
             sage: latex(I*x^2 - I*x)                                                    # needs sage.rings.number_field
             \left(\sqrt{-1}\right) x^{2} + \left(-\sqrt{-1}\right) x
         """
-        s = " "
-        coeffs = self.list(copy=False)
-        m = len(coeffs)
         if name is None:
             name = self._parent.latex_variable_names()[0]
-        atomic_repr = self._parent.base_ring()._repr_option('element_is_atomic')
-        for n in reversed(range(m)):
+
+        coeffs = self.list(copy=False)
+
+        def repr_monomial(n):
+            if n == 0: return "1"
+            if n == 1: return name
+            return f"{name}^{{{n}}}"
+
+        terms = []
+        for n in reversed(range(len(coeffs))):
             x = coeffs[n]
-            x = y = latex(x)
-            if x != '0':
-                if n != m-1:
-                    s += " + "
-                if y.find("-") == 0:
-                    y = y[1:]
-                if not atomic_repr and n > 0 and (y.find("+") != -1 or y.find("-") != -1):
-                    x = "\\left(%s\\right)" % x
-                if n > 1:
-                    var = "|%s^{%s}" % (name, n)
-                elif n==1:
-                    var = "|%s" % name
-                else:
-                    var = ""
-                s += "%s %s" % (x, var)
-        s = s.replace(" + -", " - ")
-        s = re.sub(r" 1(\.0+)? \|", " ", s)
-        s = re.sub(r" -1(\.0+)? \|", " -", s)
-        s = s.replace("|", "")
-        if s == " ":
-            return "0"
-        return s[1:].lstrip().rstrip()
+            try:
+                if not x: continue
+            except NotImplementedError:
+                pass
+            terms.append((repr_monomial(n), x))
+
+        return repr_lincomb(terms, is_latex=True, strip_one=True,
+                            detect_negative_by_comparison=False,
+                            keep_inexact_one_coeff=False,
+                            allow_lone_coeff_without_parentheses=True)
 
     def _sage_input_(self, sib, coerced):
         r"""

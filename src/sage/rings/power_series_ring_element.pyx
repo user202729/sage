@@ -97,6 +97,8 @@ With power series the behavior is the same.
 
 from cpython.object cimport Py_EQ, Py_NE
 from sage.rings.infinity import infinity, InfinityElement
+from sage.misc.repr import repr_lincomb
+from sage.misc.latex import latex as sage_latex
 
 from sage.rings.rational_field import QQ
 
@@ -672,65 +674,30 @@ cdef class PowerSeries(AlgebraElement):
             else:
                 return "O(%s^%s)" % (self._parent.variable_name(), self.prec())
 
-        atomic_repr = self._parent.base_ring()._repr_option('element_is_atomic')
         X = self._parent.variable_name()
 
-        s = " "
+        def repr_monomial(n):
+            if n == 0:
+                return "1"
+            if n == 1:
+                return X
+            return f"{X}^{n}"
+
         if self.is_sparse():
             f = self.polynomial()
-            m = f.degree() + 1
             d = f._dict_unsafe()
-            coeffs = sorted(d.items())
-            for (n, x) in coeffs:
-                x = repr(x)
-                if x != '0':
-                    if s != ' ':
-                        s += " + "
-                    if not atomic_repr and n > 0 and (x.find("+") != -1 or x.find("-") != -1):
-                        x = "(%s)" % x
-                    if n > 1:
-                        var = "*%s^%s" % (X, n)
-                    elif n==1:
-                        var = "*%s" % X
-                    else:
-                        var = ""
-                    s += "%s%s" % (x, var)
+            terms = [(repr_monomial(n), c) for n, c in sorted(d.items())]
         else:
             v = self.list()
-            m = len(v)
-            first = True
-            for n in range(m):
-                x = v[n]
-                x = repr(x)
-                if x != '0':
-                    if not first:
-                        s += " + "
-                    if not atomic_repr and n > 0 and (x[1:].find("+") != -1 or x[1:].find("-") != -1):
-                        x = "(%s)" % x
-                    if n > 1:
-                        var = "*%s^%s" % (X, n)
-                    elif n==1:
-                        var = "*%s" % X
-                    else:
-                        var = ""
-                    s += "%s%s" % (x, var)
-                    first = False
-        # end
+            terms = [(repr_monomial(n), c) for n, c in enumerate(v)]
 
-        s = s.replace(" + -", " - ")
-        s = s.replace(" 1*"," ")
-        s = s.replace(" -1*", " -")
         if not (self._prec is infinity):
-            if self._prec == 0:
-                bigoh = "O(1)"
-            elif self._prec == 1:
-                bigoh = "O(%s)" % self._parent.variable_name()
-            else:
-                bigoh = "O(%s^%s)" % (self._parent.variable_name(),self._prec)
-            if s==" ":
-                return bigoh
-            s += " + %s" % bigoh
-        return s[1:]
+            bigoh = f"O({repr_monomial(self._prec)})"
+            terms.append((bigoh, 1))
+
+        return repr_lincomb(terms, strip_one=True, no_coeff_space=False,
+                            detect_negative_by_comparison=False,
+                            allow_lone_coeff_without_parentheses=True)
 
     def _latex_(self):
         r"""
@@ -756,47 +723,25 @@ cdef class PowerSeries(AlgebraElement):
                 return "0"
             else:
                 return "0 + \\cdots"
-        s = " "
-        v = self.list()
-        m = len(v)
         X = self._parent.latex_variable_names()[0]
-        atomic_repr = self._parent.base_ring()._repr_option('element_is_atomic')
-        first = True
-        for n in range(m):
-            x = v[n]
-            x = sage.misc.latex.latex(x)
-            if x != '0':
-                if not first:
-                    s += " + "
-                if not atomic_repr and n > 0 and (x[1:].find("+") != -1 or x[1:].find("-") != -1):
-                    x = "\\left(%s\\right)" % x
-                if n > 1:
-                    var = "%s^{%s}" % (X, n)
-                elif n==1:
-                    var = "%s" % X
-                else:
-                    var = ""
-                if n > 0:
-                    s += "%s| %s" % (x, var)
-                else:
-                    s += repr(x)
-                first = False
 
-        s = s.replace(" + -", " - ")
-        s = s.replace(" -1|", " -")
-        s = s.replace(" 1|"," ")
-        s = s.replace("|","")
+        def repr_monomial(n):
+            if n == 0:
+                return "1"
+            if n == 1:
+                return X
+            return f"{X}^{{{n}}}"
+
+        v = self.list()
+        terms = [(repr_monomial(n), c) for n, c in enumerate(v)]
+
         if not (self._prec is infinity):
-            if self._prec == 0:
-                bigoh = "O(1)"
-            elif self._prec == 1:
-                bigoh = "O(%s)" % (X,)
-            else:
-                bigoh = "O(%s^{%s})" % (X, self._prec)
-            if s == " ":
-                return bigoh
-            s += " + %s" % bigoh
-        return s.lstrip(" ")
+            bigoh = f"O({repr_monomial(self._prec)})"
+            terms.append((bigoh, 1))
+
+        return repr_lincomb(terms, is_latex=True, strip_one=True,
+                            detect_negative_by_comparison=False,
+                            allow_lone_coeff_without_parentheses=True)
 
     def truncate(self, prec=infinity):
         """

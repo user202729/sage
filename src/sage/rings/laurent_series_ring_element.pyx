@@ -68,6 +68,7 @@ AUTHORS:
 # ****************************************************************************
 
 from sage.rings.infinity import infinity
+from sage.misc.repr import repr_lincomb
 
 from sage.rings.rational_field import QQ
 import sage.misc.latex
@@ -333,44 +334,23 @@ cdef class LaurentSeries(AlgebraElement):
             if self.prec() is infinity:
                 return "0"
             return "O(%s^%s)" % (self._parent.variable_name(), self.prec())
-        s = " "
-        v = self.__u.list()
-        valuation = self.__n
-        m = len(v)
+
         X = self._parent.variable_name()
-        atomic_repr = self._parent.base_ring()._repr_option('element_is_atomic')
-        first = True
-        for n in range(m):
-            x = v[n]
-            e = n + valuation
-            x = str(x)
-            if x != '0':
-                if not first:
-                    s += " + "
-                if not atomic_repr and (x[1:].find("+") != -1 or x[1:].find("-") != -1):
-                    x = "(%s)" % x
-                if e == 1:
-                    var = "*%s" % X
-                elif e == 0:
-                    var = ""
-                else:
-                    var = "*%s^%s" % (X, e)
-                s += "%s%s" % (x, var)
-                first = False
-        s = s.replace(" + -", " - ")
-        s = s.replace(" 1*"," ")
-        s = s.replace(" -1*", " -")
-        if self.prec() == 0:
-            bigoh = "O(1)"
-        elif self.prec() == 1:
-            bigoh = "O(%s)" % self._parent.variable_name()
-        else:
-            bigoh = "O(%s^%s)" % (self._parent.variable_name(),self.prec())
+        valuation = self.__n
+
+        def repr_monomial(e):
+            if e == 0: return "1"
+            if e == 1: return X
+            return f"{X}^{e}"
+
+        v = self.__u.list()
+        terms = [(repr_monomial(n + valuation), x) for n, x in enumerate(v)]
         if self.prec() != infinity:
-            if s == " ":
-                return bigoh
-            s += " + %s" % bigoh
-        return s[1:]
+            bigoh = f"O({repr_monomial(self.prec())})"
+            terms.append((bigoh, 1))
+
+        return repr_lincomb(terms, strip_one=True, no_coeff_space=False,
+                            detect_negative_by_comparison=False)
 
     def verschiebung(self, n):
         r"""
@@ -1587,7 +1567,7 @@ cdef class LaurentSeries(AlgebraElement):
 
         # Case 3: The unit part must be a square
         unit_part = (self >> v).power_series()
-        
+
         # We use a try-except block to handle inconsistent API in base rings
         try:
             # Check is_square without keyword args first (safest)
@@ -1607,7 +1587,7 @@ cdef class LaurentSeries(AlgebraElement):
                 sqrt_unit = unit_part.sqrt()
             except (ValueError, ArithmeticError):
                 return False, None
-                
+
             # Reconstruct: t^(v/2) * sqrt(unit)
             return True, self.parent()(sqrt_unit) << (v // 2)
         else:

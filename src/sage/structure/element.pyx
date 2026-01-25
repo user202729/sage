@@ -959,11 +959,11 @@ cdef class Element(SageObject):
     def __pos__(self):
         return self
 
-    def _coeff_repr(self, no_space=True):
-        if self._is_atomic():
+    def _coeff_repr(self, no_space: bool=True, *, allow_parenthesize: bool = True):
+        if self._is_atomic() or not allow_parenthesize:
             s = repr(self)
         else:
-            s = "(%s)" % repr(self)
+            s = f"({self!r})"
         if no_space:
             return s.replace(' ', '')
         return s

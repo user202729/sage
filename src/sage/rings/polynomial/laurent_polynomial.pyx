@@ -12,6 +12,8 @@ from sage.categories.map cimport Map
 from sage.structure.element import coerce_binop, parent
 from sage.structure.factorization import Factorization
 from sage.misc.derivative import multi_derivative
+from sage.misc.repr import repr_lincomb
+from sage.misc.latex import latex as sage_latex
 from sage.rings.polynomial.polynomial_element import Polynomial
 from sage.rings.polynomial.polynomial_ring import PolynomialRing_generic
 from sage.structure.richcmp cimport richcmp, rich_to_bool
@@ -572,34 +574,18 @@ cdef class LaurentPolynomial_univariate(LaurentPolynomial):
         """
         if self.is_zero():
             return "0"
-        s = " "
-        v = self.__u.list()
-        valuation = self.__n
-        m = len(v)
         X = self._parent.variable_name()
-        atomic_repr = self._parent.base_ring()._repr_option('element_is_atomic')
-        first = True
-        for n in range(m):
-            x = v[n]
-            e = n + valuation
-            x = str(x)
-            if x != '0':
-                if not first:
-                    s += " + "
-                if not atomic_repr and (x[1:].find("+") != -1 or x[1:].find("-") != -1):
-                    x = "({})".format(x)
-                if e == 1:
-                    var = "*{}".format(X)
-                elif e == 0:
-                    var = ""
-                else:
-                    var = "*{}^{}".format(X, e)
-                s += "{}{}".format(x, var)
-                first = False
-        s = s.replace(" + -", " - ")
-        s = s.replace(" 1*", " ")
-        s = s.replace(" -1*", " -")
-        return s[1:]
+        valuation = self.__n
+
+        def repr_monomial(e):
+            if e == 0: return "1"
+            if e == 1: return X
+            return f"{X}^{e}"
+
+        v = self.__u.list()
+        terms = [(repr_monomial(n + valuation), x) for n, x in enumerate(v)]
+        return repr_lincomb(terms, strip_one=True, no_coeff_space=False,
+                            detect_negative_by_comparison=False)
 
     def _regina_(self, regina):
         r"""

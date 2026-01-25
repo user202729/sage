@@ -2,8 +2,11 @@
 Repr formatting support
 """
 
+from typing import Any, Callable
 
-def coeff_repr(c, is_latex=False):
+
+def coeff_repr(c, is_latex: bool = False, *, no_space: bool = True,
+               allow_parenthesize: bool = True):
     r"""
     String representing coefficients in a linear combination.
 
@@ -24,10 +27,13 @@ def coeff_repr(c, is_latex=False):
         '\\frac{1}{2}'
         sage: coeff_repr(-x^2, is_latex=True)                                           # needs sage.symbolic
         '\\left(-x^{2}\\right)'
+        sage: R.<x> = QQ[]
+        sage: coeff_repr(x^2 + 1, no_space=False)
+        'x^2 + 1'
     """
     if not is_latex:
         try:
-            return c._coeff_repr()
+            return c._coeff_repr(no_space=no_space, allow_parenthesize=allow_parenthesize)
         except AttributeError:
             pass
     if isinstance(c, (int, float)):
@@ -35,8 +41,10 @@ def coeff_repr(c, is_latex=False):
     if is_latex and hasattr(c, '_latex_'):
         s = c._latex_()
     else:
-        s = str(c).replace(' ', '')
-    if s.find("+") != -1 or s.find("-") != -1:
+        s = str(c)
+        if no_space:
+            s = s.replace(' ', '')
+    if ("+" in s or "-" in s) and allow_parenthesize:
         if is_latex:
             return "\\left(%s\\right)" % s
         else:
@@ -44,20 +52,36 @@ def coeff_repr(c, is_latex=False):
     return s
 
 
-def repr_lincomb(terms, is_latex=False, scalar_mult='*', strip_one=False,
-                 repr_monomial=None, latex_scalar_mult=None):
+def repr_lincomb(terms, is_latex: bool = False, scalar_mult: str = '*', strip_one: bool = False,
+                 repr_monomial: Callable[[Any], str] | None = None,
+                 latex_scalar_mult: str | None = None, *,
+                 detect_negative_by_comparison: bool = True,
+                 no_coeff_space: bool = True, keep_inexact_one_coeff: bool = True,
+                 allow_lone_coeff_without_parentheses: bool = False) -> str:
     """
     Compute a string representation of a linear combination of some
     formal symbols.
 
     INPUT:
 
-    - ``terms`` -- list of terms, as pairs (support, coefficient)
+    - ``terms`` -- list of terms, as pairs (monomial, c) where ``c`` is a
+      (scalar) coefficient
     - ``is_latex`` -- whether to produce latex (default: ``False``)
     - ``scalar_mult`` -- string representing the multiplication (default: ``'*'``)
+    - ``strip_one`` -- if ``monomial`` has representation ``"1"``, represent
+      ``c*monomial`` as just ``c``.
+
+      Note that ``1*monomial`` is always represented as ``monomial``
+    - ``repr_monomial`` -- function used to
     - ``latex_scalar_mult`` -- latex string representing the multiplication
       (default: a space if ``scalar_mult`` is ``'*'``; otherwise ``scalar_mult``)
-    - ``coeffs`` -- for backward compatibility
+    - ``detect_negative_by_comparison`` -- if ``True``, apart from checking whether the string
+      representation of the coefficient starts with a minus sign, also detect negative
+      coefficients by comparing it to zero.
+    - ``no_coeff_space`` -- if ``True``, remove spaces from the string
+      representation of the coefficient. Only applies if ``is_latex`` is ``False``.
+    - ``keep_inexact_one_coeff`` -- if ``True``, keep ``1.0*x`` as is;
+      otherwise, represent it as ``x``.
 
     EXAMPLES::
 
@@ -157,21 +181,23 @@ def repr_lincomb(terms, is_latex=False, scalar_mult='*', strip_one=False,
 
     for (monomial, c) in terms:
         if c != 0:
-            coeff = coeff_repr(c)
+            coeff = coeff_repr(c, is_latex, no_space=no_coeff_space)
             negative = False
-            if len(coeff) and coeff[0] == "-":
-                negative = True
-            try:
-                if c < 0:
+            if not isinstance(c, str):
+                # if c is already a string, we cannot obtain
+                # representation of -c
+                if coeff.startswith(("-", "(-", "\\left(-")):
                     negative = True
-            except (NotImplementedError, TypeError):
-                # comparisons may not be implemented for some coefficients
-                pass
-            if negative:
-                coeff = coeff_repr(-c, is_latex)
-            else:
-                coeff = coeff_repr(c, is_latex)
-            if coeff == "1":
+                elif detect_negative_by_comparison:
+                    try:
+                        if c < 0:
+                            negative = True
+                    except (NotImplementedError, TypeError):
+                        # comparisons may not be implemented for some coefficients
+                        pass
+                if negative:
+                    coeff = coeff_repr(-c, is_latex, no_space=no_coeff_space)
+            if coeff == "1" or (not keep_inexact_one_coeff and coeff.rstrip("0") == "1."):
                 coeff = ""
             if coeff != "0":
                 if negative:
@@ -185,13 +211,15 @@ def repr_lincomb(terms, is_latex=False, scalar_mult='*', strip_one=False,
                     else:
                         sign = " + "
                 b = repr_monomial(monomial)
-                if len(b):
+                if b:
                     if coeff != "":
                         if b == "1" and strip_one:
+                            if len(terms) == 1 and allow_lone_coeff_without_parentheses:
+                                return coeff_repr(c, is_latex, no_space=no_coeff_space, allow_parenthesize=False)
                             b = ""
                         else:
                             b = scalar_mult + b
-                s += "%s%s%s" % (sign, coeff, b)
+                s += f"{sign}{coeff}{b}"
                 first = False
     if first:
         return "0"
